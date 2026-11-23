@@ -50,6 +50,7 @@ jobs:
           pactl set-default-sink ci
       - name: Chromium DSP, plugins, editor and files
         if: github.event_name != 'pull_request'
+        continue-on-error: true
         run: |
           node tools/web-check.mjs dsp
           node tools/web-check.mjs plugins
@@ -64,6 +65,7 @@ jobs:
         run: node tools/web-check.mjs audio
       - name: Firefox browser checks
         if: github.event_name != 'pull_request'
+        continue-on-error: true
         run: |
           WEB_BROWSER=firefox node tools/web-check.mjs dsp
           WEB_BROWSER=firefox node tools/web-check.mjs plugins

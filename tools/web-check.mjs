@@ -104,7 +104,7 @@ try {
     const param = async () => (await snapshot()).parameters[0].values.find(p => /start.*offset/i.test(p.name))?.value;
     const before = await param(); assert.equal(before, 0);
     await page.mouse.click(bounds.x+40, bounds.y+210, {button:'right'});
-    await page.getByRole('button',{name:'Type in value...'}).click();
+    await page.getByRole('button',{name:'Enter value...'}).click();
     await page.getByRole('textbox',{name:'Parameter value'}).fill('100');
     await page.getByRole('button',{name:'Apply',exact:true}).click();
     await page.waitForTimeout(200);

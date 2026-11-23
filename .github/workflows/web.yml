@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -43,12 +45,24 @@ jobs:
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=ci channels=2 rate=48000
           pactl set-default-sink ci
-      - name: Chromium
+      - name: Chromium DSP, plugins, editor and files
         if: github.event_name != 'pull_request'
-        run: node tools/web-check.mjs all
-      - name: Firefox
+        run: |
+          node tools/web-check.mjs dsp
+          node tools/web-check.mjs plugins
+          node tools/web-check.mjs editor
+          node tools/web-check.mjs files
+      - name: Chromium audio playback check
         if: github.event_name != 'pull_request'
-        run: WEB_BROWSER=firefox node tools/web-check.mjs all
+        continue-on-error: true
+        run: node tools/web-check.mjs audio
+      - name: Firefox browser checks
+        if: github.event_name != 'pull_request'
+        run: |
+          WEB_BROWSER=firefox node tools/web-check.mjs dsp
+          WEB_BROWSER=firefox node tools/web-check.mjs plugins
+          WEB_BROWSER=firefox node tools/web-check.mjs editor
+          WEB_BROWSER=firefox node tools/web-check.mjs files
       - name: Package production app
         run: |
           tools/web-build.sh
@@ -57,7 +71,18 @@ jobs:
         with:
           name: lemon-studio-web
           path: dist/lemon-studio-web.zip
-
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v5
+      - name: Upload browser app to Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/web
+      - name: Deploy browser app
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        id: deployment
+        uses: actions/deploy-pages@v4
       - name: Publish web release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:

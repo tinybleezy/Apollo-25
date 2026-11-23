@@ -22,7 +22,7 @@ jobs:
           cache: npm
       - name: Native fixture dependencies
         if: github.event_name == 'workflow_dispatch'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libwayland-dev libclang-dev pkg-config pulseaudio
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libasound2-dev libwayland-dev libclang-dev libjack-jackd2-dev pkg-config pulseaudio
       - uses: Swatinem/rust-cache@v2
       - name: Install web tooling
         run: tools/web-setup.sh

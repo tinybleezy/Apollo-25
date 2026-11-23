@@ -21,7 +21,10 @@ export async function checkFiles(page) {
   const save=async()=>{const done=page.waitForEvent('download');await page.keyboard.press('Control+s');return done;};
   const storage=()=>page.evaluate(async()=>{const db=await new Promise((ok,no)=>{const r=indexedDB.open('lemon-studio',1);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});try{return await new Promise((ok,no)=>{const r=db.transaction('workspace').objectStore('workspace').get('current');r.onsuccess=()=>ok({project:[...r.result.project],files:r.result.files.map(f=>({path:f.path,bytes:[...f.bytes]}))});r.onerror=()=>no(r.error);});}finally{db.close();}});
   await page.locator('html[data-lemon-ready=true]').waitFor(); await wait(s=>!s.loading);
-  await click('Menu(2)');await click('MenuItem(2, 0)');await click('Lemon Trio');
+  // F8 opens the supported plugin palette; the legacy Add menu item opens the library browser.
+  await page.keyboard.press('F8');
+  await page.waitForFunction(async()=>(await import('./os_app.js')).snapshot().then(s=>s.hits.some(h=>h.action==='Lemon Trio'||h.hint==='Lemon Trio')));
+  await click('Lemon Trio');
   await page.locator('.plugin-window canvas').waitFor();await page.getByRole('button',{name:'Close instrument editor'}).click();
   await click('ToggleWin(PianoRoll)');await note(40);await wait(s=>s.notes===1);
   // Saving must remain responsive when the audio worker owns an instrument during completion.

@@ -153,8 +153,9 @@ try {
     const snapshot=()=>page.evaluate(async()=>JSON.parse(globalThis.lemonTestSnapshot()));
     const click=async(action)=>{const s=await snapshot(), h=s.hits.findLast(h=>h.action===action || h.hint===action);assert.ok(h,`Missing ${action}: ${JSON.stringify(s.hits.filter(h=>h.action.includes('Popup')))}`);const[x,y,w,z]=h.rect;await page.mouse.click(x+w/2,y+z/2);await page.waitForTimeout(250);};
     await page.waitForFunction(()=>{const s=globalThis.lemonTestSnapshot();return s && !JSON.parse(s).loading;});
-    await click('Menu(2)'); await click('MenuItem(2, 0)');
-
+    // F8 is the supported shortcut for the plugin palette; the legacy Add > More plugins row opens the library browser.
+    await page.keyboard.press('F8');
+    await page.waitForFunction(() => JSON.parse(globalThis.lemonTestSnapshot()).hits.some(h => h.action === 'Lemon Trio' || h.hint === 'Lemon Trio'));
     await click('Lemon Trio');
     await page.locator('.plugin-window canvas').waitFor();
     await page.getByRole('button',{name:'Close instrument editor'}).click();

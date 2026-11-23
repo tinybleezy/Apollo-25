@@ -72,6 +72,44 @@ jobs:
         run: |
           tools/web-build.sh
           node tools/web-check.mjs package
+      - name: Enable cross-origin isolation on GitHub Pages
+        run: |
+          cat > dist/web/coi-serviceworker.js <<'EOF'
+          self.addEventListener('install', () => self.skipWaiting());
+          self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch', event => {
+            if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') return;
+            event.respondWith((async () => {
+              const response = await fetch(event.request);
+              const headers = new Headers(response.headers);
+              headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+              headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+              return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers
+              });
+            })());
+          });
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('dist/web/index.html')
+          html = path.read_text()
+          bootstrap = """<script>
+          if (!crossOriginIsolated && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+            navigator.serviceWorker.register('./coi-serviceworker.js').then(registration => {
+              if (registration.active && !navigator.serviceWorker.controller) location.reload();
+            }).catch(error => {
+              document.querySelector('#status').textContent = 'Browser isolation setup failed: ' + error;
+            });
+          }
+          </script>
+          """
+          html = html.replace('<script type="module"', bootstrap + '<script type="module"', 1)
+          path.write_text(html)
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: lemon-studio-web

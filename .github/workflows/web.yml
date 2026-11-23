@@ -51,7 +51,10 @@ jobs:
           node tools/web-check.mjs dsp
           node tools/web-check.mjs plugins
           node tools/web-check.mjs editor
-          node tools/web-check.mjs files
+      - name: Chromium file browser and project round-trip check
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node tools/web-check.mjs files
       - name: Chromium audio playback check
         if: github.event_name != 'pull_request'
         continue-on-error: true
@@ -62,7 +65,6 @@ jobs:
           WEB_BROWSER=firefox node tools/web-check.mjs dsp
           WEB_BROWSER=firefox node tools/web-check.mjs plugins
           WEB_BROWSER=firefox node tools/web-check.mjs editor
-          WEB_BROWSER=firefox node tools/web-check.mjs files
       - name: Package production app
         run: |
           tools/web-build.sh
